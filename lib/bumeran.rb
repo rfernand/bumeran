@@ -1,5 +1,4 @@
-#module Bumeran
-#end
+require 'rails'
 require 'httparty'
 require 'erb'
 
@@ -8,19 +7,19 @@ class Bumeran
   base_uri 'https://developers.bumeran.com'
 
   # API login configuration, need initialization setup to work
-  mattr_accessor :grant_type
+  cattr_accessor :grant_type
   @@grant_type = "password"
 
-  mattr_accessor :client_id
+  cattr_accessor :client_id
   @@client_id = nil
 
-  mattr_accessor :username
+  cattr_accessor :username
   @@username = nil
 
-  mattr_accessor :email
+  cattr_accessor :email
   @@email    = nil
 
-  mattr_accessor :password
+  cattr_accessor :password
   @@password    = nil
 
 

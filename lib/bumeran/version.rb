@@ -1,3 +1,3 @@
-module Bumeran
-  VERSION = "0.0.1"
+module BumeranConfiguration
+  VERSION = "0.0.2"
 end
