@@ -19,4 +19,4 @@ end
 
 require 'bumeran'
 require 'bumeran_initializer_helper'
-require 'pry-debugger'
+require 'pry-byebug'

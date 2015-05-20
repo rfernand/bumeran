@@ -67,9 +67,11 @@ class Bumeran
         referencia: "",   # optional
         tipoTrabajoId: 0,
         denominacion: {
-          id: 0,
-          nombre: "",
-          logo: ""
+          # you can use an id
+          id: 0
+          # or create a new one
+          #nombre: "",
+          #logo: ""
         },
         preguntas: [  # optional
           {
@@ -80,11 +82,11 @@ class Bumeran
         ],
         postulantesDiscapacitados: false, #optional
         lugarTrabajo: {
-          id: 0,
-          direccion: "",
-          zonaId: 0,
+          #id: 0,         # TODO: found in the developers site but not found in the documentation
           paisId: 0,
+          zonaId: 0,
           localidadId: 0,
+          direccion: "",
           mostrarDireccionEnAviso: false
         },
         recepcionCandidato: {
@@ -140,62 +142,68 @@ class Bumeran
 
   def test_publish
     json =  default_publication_json
-    json[:descripcion]             = "Descripcion de la publicacion de prueba"
-    json[:titulo]                  = "Publicacion de prueba"
+    json[:descripcion]             = "Descripcion de la publicacion de prueba"    # required
+    json[:titulo]                  = "Publicacion de prueba"                      # required
     #json[:referencia]              = ""  #optional
-    
-    json[:denominacion][:id]      = 0
-    json[:denominacion][:nombre]  = ""
-    json[:denominacion][:logo]    = ""
+
+    # We can use an id for denominacion
+    json[:denominacion][:id]      = 0                                             # required
+    # or we can create a new one
+    #json[:denominacion][:nombre]  = ""
+    #json[:denominacion][:logo]    = ""
 
     #json[:preguntas]  # optional
-    json[:preguntas][0][:simple][:texto] = "Pregunta de prueba"
+    json[:preguntas][0][:simple][:texto] = "Pregunta de prueba"                   # optional
+    json[:preguntas] << {choice: {texto: "Pregunta de alternativas", indiceCorrecta: 2, opciones: ["respuesta 1", "respuesta 2", "respuesta 3", "respuesta 4"]}}      # optional
 
     #json["postulantesDiscapacitados"] false, #optional
 
     #json["lugarTrabajo"]
-    json[:lugarTrabajo][:id]                = 0
-    json[:lugarTrabajo][:direccion]         = ""
-    json[:lugarTrabajo][:zonaId]            = 0
-    json[:lugarTrabajo][:paisId]            = 0
-    json[:lugarTrabajo][:localidadId]       = 0
-    json[:lugarTrabajo][:mostrarDireccionEnAviso] = false
+    #json[:lugarTrabajo][:id]                = 0  # TODO: found in the developers site but not in the documentation
+    json[:lugarTrabajo][:paisId]            = 1                      # required
+    json[:lugarTrabajo][:zonaId]            = 18                     # required
+    json[:lugarTrabajo][:localidadId]       = 6050                   # required
+    json[:lugarTrabajo][:direccion]         = "San Martin 256"       # required
+    json[:lugarTrabajo][:mostrarDireccionEnAviso] = false      # required
 
     json[:recepcionCandidato][:electronica][:email] = "test@domain.com" # required
-    json[:areaId]             = 0
-    json[:subAreaId]          = 0
+    # recepcionCandidato can aslo be with dias, rangoHorario and direccion
+    json[:areaId]             = 19        # required
+    json[:subAreaId]          = 26        # required
     ####json[:requisitos]               # optional
     ###json[:requisitos][:experiencia]
-    #json[:requisitos][:experiencia][:minimo]     = 0
-    #json[:requisitos][:experiencia][:excluyente] = false
+    json[:requisitos][:experiencia][:minimo]     = 60             # required
+    json[:requisitos][:experiencia][:excluyente] = false          # required
     ###json[:requisitos][:edad]
-    #json[:requisitos][:edad][:edadMinima] = 0
-    #json[:requisitos][:edad][:edadMaxima] = 0
-    #json[:requisitos][:edad][:excluyente] = false
+    json[:requisitos][:edad][:edadMinima] = 18                    # required
+    json[:requisitos][:edad][:edadMaxima] = 40                    # required
+    json[:requisitos][:edad][:excluyente] = false                 # required
     ###json["requisitos"]["educacion"]
-    #json["requisitos"]["educacion"]["estadoEstudioId"] = 0
-    #json["requisitos"]["educacion"]["tipoEstudioId"]   = 0
-    #json["requisitos"]["educacion"]["excluyente"]      = false
+    json[:requisitos][:educacion][:estadoEstudioId] = 2           # required
+    json[:requisitos][:educacion][:tipoEstudioId]   = 3           # required
+    json[:requisitos][:educacion][:excluyente]      = false       # required
     ###json["requisitos"]["idiomas"]
-    #json["requisitos"]["idiomas"]["nivelId"]    = 0
-    #json["requisitos"]["idiomas"]["idiomaId"]   = 0
-    #json["requisitos"]["idiomas"]["excluyente"] = false
+    json[:requisitos][:idiomas][0][:nivelId]    = 10              # required
+    json[:requisitos][:idiomas][0][:idiomaId]   = 1               # required
+    json[:requisitos][:idiomas][0][:excluyente] = false           # required
     ###json["requisitos"]["residencia"]
-    #json["requisitos"]["residencia"]["cercania"]   = ""
-    #json["requisitos"]["residencia"]["cantidadKm"] = 0
-    #json["requisitos"]["residencia"]["excluyente"] = false
+    json[:requisitos][:residencia][:cercania]   = "provincia"     # required
+    #json[:requisitos][:residencia][:cantidadKm] = 0              # optional
+    json[:requisitos][:residencia][:excluyente] = false           # required
     ###json["requisitos"]["salario"]
-    #json["requisitos"]["salario"]["tipo"]             = ""
-    #json["requisitos"]["salario"]["salarioMinimo"]    = 0
-    #json["requisitos"]["salario"]["salarioMaximo"]    = 0
-    #json["requisitos"]["salario"]["frecuenciaPagoId"] = 0
-    #json["requisitos"]["salario"]["mostrarAviso"]     = false
-    #json["requisitos"]["salario"]["solicitarCandidato"] = false
-    #json["requisitos"]["salario"]["excluyente"]       = false
-    ###json["requisitos"]["genero"]
-    #json["requisitos"]["genero"]["nombre"]     = ""
-    #json["requisitos"]["genero"]["excluyente"] = false
-    json[:tipoTrabajoId] =  0
+    json[:requisitos][:salario][:tipo]             = "bruto"      # required
+    json[:requisitos][:salario][:salarioMinimo]    = 200000       # required
+    json[:requisitos][:salario][:salarioMaximo]    = 1000000      # required
+    json[:requisitos][:salario][:frecuenciaPagoId] = 4            # required
+    json[:requisitos][:salario][:mostrarAviso]     = true         # required
+    json[:requisitos][:salario][:solicitarCandidato] = true       # required
+    json[:requisitos][:salario][:excluyente]       = false        # optional
+    ###json[:requisitos][:genero]
+    json[:requisitos][:genero][:nombre]     = "masculino"       # required
+    json[:requisitos][:genero][:excluyente] = false             # required
+    json[:tipoTrabajoId] =  4                                   # required
+
+    binding.pry
 
     publish(json.to_json)
   end
@@ -257,6 +265,22 @@ class Bumeran
     response = self.class.get(subareas_path, @@options)
 
     parse_response(response)
+  end
+
+  def get_denominaciones
+    initialize
+    denominaciones_path = "/v0/empresas/denominaciones"
+    response = self.class.get(denominaciones_path, @@options)
+
+    return parse_response(response)
+  end
+
+  def get_direcciones
+    initialize
+    direcciones_path = "/v0/empresas/direcciones"
+    response = self.class.get(direcciones_path, @@options)
+
+    return parse_response(response)
   end
 
   def frecuencias_pago
