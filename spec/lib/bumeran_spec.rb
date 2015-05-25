@@ -5,47 +5,41 @@ describe Bumeran do
   end
 
   it 'has a valid model' do
-    bumeran = Bumeran.new
-    bumeran.has_valid_access_token?.should be_true
+    Bumeran.has_valid_access_token?.should be_true
   end
 
   it 'can publish', publish: true do
     publication = BumeranFixture.publication
-    bumeran = Bumeran.new
-    result = bumeran.publish(publication.body.to_json)
+    result = Bumeran.publish(publication.body.to_json)
     pp result
     result.to_i.should > 0
   end
 
   it 'can get publication', publish: true do
     publication = BumeranFixture.publication
-    bumeran = Bumeran.new
-    publication_id = bumeran.publish(publication.body.to_json)
+    publication_id = Bumeran.publish(publication.body.to_json)
     pp publication_id
     #binding.pry
     
     publication_id.should > 0
-    publication = bumeran.get_publication(publication_id)
+    publication = Bumeran.get_publication(publication_id)
     #binding.pry
     pp publication
   end
 
   it 'can get areas', getters: true do
-    bumeran = Bumeran.new
-    pp bumeran.areas
-    bumeran.areas.count.should > 0
+    pp Bumeran.areas
+    Bumeran.areas.count.should > 0
   end
 
   it 'can get subareas', getters: true do
-    bumeran = Bumeran.new
-    pp bumeran.subareas
-    bumeran.subareas.count.should > 0
+    pp Bumeran.subareas
+    Bumeran.subareas.count.should > 0
   end
 
   it 'can get frecuencias_pago', getters: true do
-    bumeran = Bumeran.new
-    pp bumeran.frecuencias_pago
-    bumeran.frecuencias_pago.count.should > 0
+    pp Bumeran.frecuencias_pago
+    Bumeran.frecuencias_pago.count.should > 0
   end
 
 end

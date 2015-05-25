@@ -3,36 +3,38 @@ require 'time'
 require 'httparty'
 require 'erb'
 
-class Bumeran
+module Bumeran
   include HTTParty
   base_uri 'https://developers.bumeran.com'
 
   # API login configuration, need initialization setup to work
-  cattr_accessor :grant_type
+  mattr_accessor :grant_type
   @@grant_type = "password"
 
-  cattr_accessor :client_id
+  mattr_accessor :client_id
   @@client_id = nil
 
-  cattr_accessor :username
+  mattr_accessor :username
   @@username = nil
 
-  cattr_accessor :email
+  mattr_accessor :email
   @@email    = nil
 
-  cattr_accessor :password
+  mattr_accessor :password
   @@password    = nil
 
-  cattr_accessor :access_token
+  mattr_accessor :access_token
   @@access_token = nil
 
-  cattr_accessor :expires_in
+  @@token_type= nil
+
+  mattr_accessor :expires_in
   @@expires_in = nil
 
-  cattr_accessor :access_token_updated_at
+  mattr_accessor :access_token_updated_at
   @@access_token_updated_at = nil
 
-  cattr_accessor :options
+  mattr_accessor :options
   @@options = nil
 
   @@areas = []
@@ -41,13 +43,14 @@ class Bumeran
   @@zonas = {}
   @@localidades = {}
   @@plan_publicaciones= {}
+  @@frecuencias_pago = []
 
   # Default way to setup Bumeran.
   def self.setup
     yield self
   end
 
-  def initialize
+  def self.initialize
     unless has_valid_access_token?
       login
       @@options = { query: {access_token: @@access_token} }
@@ -55,7 +58,7 @@ class Bumeran
   end
 
 
-  def has_valid_access_token?
+  def self.has_valid_access_token?
     if @@access_token_updated_at && @@expires_in
       (Time.now < @@access_token_updated_at  + @@expires_in)
     else
@@ -64,12 +67,12 @@ class Bumeran
   end 
 
   # Publicaciones
-  def publish(json)
-    initialize
+  def self.publish(json)
+    Bumeran.initialize
     new_publish_path = "/v0/empresas/avisos"
-    response = self.class.put(new_publish_path, @@options.merge(body: json, headers: { "Accept" => "application/json", "Content-Type" => "application/json"}))
+    response = self.put(new_publish_path, @@options.merge(body: json, headers: { "Accept" => "application/json", "Content-Type" => "application/json"}))
 
-    if parse_response(response)
+    if Parser.parse_response(response)
       case response.code
         when 201
           # "Publication created, All good!"
@@ -81,21 +84,18 @@ class Bumeran
     end
   end
 
-  def get_publication(publication_id)
+  def self.get_publication(publication_id)
     get_publish_path = "/v0/empresas/avisos/#{publication_id}"
-    response = self.class.get(get_publish_path, @@options)
+    response = self.get(get_publish_path, @@options)
 
-    return parse_response_to_json(response)
+    return Parser.parse_response_to_json(response)
   end
 
-  def areas
-    if @@areas.empty?
-      get_areas
-    end
-    @@areas
+  def self.areas
+    @@areas.empty? ? get_areas : @@areas
   end
 
-  def subareas
+  def self.subareas
     if @@subareas.empty?
       areas.each do |area|
         area["subareas"] = get_subareas_in(area["id"])
@@ -106,30 +106,27 @@ class Bumeran
   end
 
   # Servicios comunes
-  def get_areas #jobs areas
-    initialize
+  def self.get_areas #jobs areas
+    Bumeran.initialize
     areas_path = "/v0/empresas/comunes/areas" 
-    response = self.class.get(areas_path, @@options)
+    response = self.get(areas_path, @@options)
 
-    @@areas = parse_response_to_json(response)
+    @@areas = Parser.parse_response_to_json(response)
   end
 
-  def get_subareas_in(area_id)
-    initialize
+  def self.get_subareas_in(area_id)
+    Bumeran.initialize
     subareas_path = "/v0/empresas/comunes/areas/#{area_id}/subAreas" 
-    response = self.class.get(subareas_path, @@options)
+    response = self.get(subareas_path, @@options)
 
-    parse_response_to_json(response)
+    Parser.parse_response_to_json(response)
   end
 
-  def paises
-    if @@paises.empty?
-      get_paises
-    end
-    @@paises
+  def self.paises
+    @@paises.empty? ? get_paises : @@paises
   end
 
-  def zonas
+  def self.zonas
     if @@zonas.empty?
       paises.each do |pais|
         pais["zonas"] = get_zonas_in(pais["id"])
@@ -139,7 +136,7 @@ class Bumeran
     @@zonas
   end
 
-  def localidades
+  def self.localidades
     if @@localidades.empty?
       zonas.each do |zona|
         zona["localidades"] = get_localidades_in(zona["id"])
@@ -150,31 +147,31 @@ class Bumeran
   end
 
   # Servicios generales asociados a datos de localización
-  def get_paises
-    initialize
+  def self.get_paises
+    Bumeran.initialize
     paises_path = "/v0/empresas/locacion/paises" 
-    response = self.class.get(paises_path, @@options)
+    response = self.get(paises_path, @@options)
 
-    @@paises = parse_response_to_json(response)
+    @@paises = Parser.parse_response_to_json(response)
   end
 
-  def get_zonas_in(pais_id)
-    initialize
+  def self.get_zonas_in(pais_id)
+    Bumeran.initialize
     zonas_path = "/v0/empresas/locacion/paises/#{pais_id}/zonas" 
-    response = self.class.get(zonas_path, @@options)
+    response = self.get(zonas_path, @@options)
 
-    parse_response_to_json(response)
+    Parser.parse_response_to_json(response)
   end
 
-  def get_localidades_in(zona_id)
-    initialize
+  def self.get_localidades_in(zona_id)
+    Bumeran.initialize
     localidades_path = "/v0/empresas/locacion/zonas/#{zona_id}/localidades" 
-    response = self.class.get(localidades_path, @@options)
+    response = self.get(localidades_path, @@options)
 
-    parse_response_to_json(response)
+    Parser.parse_response_to_json(response)
   end
 
-  def plan_publicaciones 
+  def self.plan_publicaciones 
     if @@plan_publicaciones.empty?
       paises.each do |pais|
         pais["plan_publicaciones"] = get_plan_publicaciones_in(pais["id"])
@@ -184,131 +181,171 @@ class Bumeran
     @@subareas
   end
 
-  def get_plan_publicaciones_in(pais_id)
-    initialize
+  def self.get_plan_publicaciones_in(pais_id)
+    Bumeran.initialize
     plan_publicaciones_path = "/v0/empresas/planPublicaciones/#{pais_id}"
-    response = self.class.get(plan_publicaciones_path, @@options)
+    response = self.get(plan_publicaciones_path, @@options)
 
-    return parse_response_to_json(response)
+    return Parser.parse_response_to_json(response)
   end
 
-  def get_denominaciones
-    initialize
+  def self.denominaciones
+    @@denominaciones.empty? ? get_denominaciones : @@denominaciones
+  end
+
+  def self.get_denominaciones
+    Bumeran.initialize
     denominaciones_path = "/v0/empresas/denominaciones"
-    response = self.class.get(denominaciones_path, @@options)
+    response = self.get(denominaciones_path, @@options)
 
-    return parse_response_to_json(response)
+    @@denominaciones = Parser.parse_response_to_json(response)
   end
 
-  def get_direcciones
-    initialize
+  def self.direcciones
+    @@direcciones.empty? ? get_direcciones : @@direcciones
+  end
+
+  def self.get_direcciones
+    Bumeran.initialize
     direcciones_path = "/v0/empresas/direcciones"
-    response = self.class.get(direcciones_path, @@options)
+    response = self.get(direcciones_path, @@options)
 
-    return parse_response_to_json(response)
+    @@direcciones = Parser.parse_response_to_json(response)
   end
 
-  def frecuencias_pago
-    initialize
+  def self.frecuencias_pago
+    @@frecuencias_pago.empty? ? get_frecuencias_pago : @@frecuencias_pago
+  end
+
+  def self.get_frecuencias_pago
+    Bumeran.initialize
     frecuencias_pago_path = "/v0/empresas/comunes/frecuenciasPago"
-    response = self.class.get(frecuencias_pago_path, @@options)
+    response = self.get(frecuencias_pago_path, @@options)
 
-    return parse_response_to_json(response)
+    @@frecuencias_pago = Parser.parse_response_to_json(response)
   end
 
-  def idiomas
-    initialize
+  def self.idiomas
+    @@idiomas.empty? ? get_idiomas : @@idiomas
+  end
+
+  def self.get_idiomas
+    Bumeran.initialize
     idiomas_path = "/v0/empresas/comunes/idiomas"
-    response = self.class.get(idiomas_path, @@options)
+    response = self.get(idiomas_path, @@options)
 
-    return parse_response_to_json(response)
+    @@idiomas = Parser.parse_response_to_json(response)
   end
 
-  def industrias
-    initialize
+  def self.industrias
+    @@industrias.empty? ? get_industrias : @@industrias
+  end
+
+  def self.get_industrias
+    Bumeran.initialize
     industrias_path = "/v0/empresas/comunes/industrias"
-    response = self.class.get(industrias_path, @@options)
+    response = self.get(industrias_path, @@options)
 
-    return parse_response_to_json(response)
+    @@industrias = Parser.parse_response_to_json(response)
   end
 
-  def niveles_idiomas
-    initialize
+  def self.niveles_idiomas
+    @@niveles_idiomas.empty? ? get_niveles_idiomas : @@niveles_idiomas
+  end
+
+  def self.get_niveles_idiomas
+    Bumeran.initialize
     niveles_idiomas_path = "/v0/empresas/comunes/nivelesIdiomas"
-    response = self.class.get(niveles_idiomas_path, @@options)
+    response = self.get(niveles_idiomas_path, @@options)
 
-    return parse_response_to_json(response)
+    @niveles_idiomas = Parser.parse_response_to_json(response)
   end
 
-  def tipos_trabajo
-    initialize
-    tipos_trabajo_path = "/v0/empresas/comunes/tiposTrabajo"
-    response = self.class.get(tipos_trabajo_path, @@options)
+  def self.tipos_trabajo
+    @@tipos_trabajo.empty? ? get_tipos_trabajos : @@tipos_trabajo
+  end
 
-    return parse_response_to_json(response)
+  def self.get_tipos_trabajo
+    Bumeran.initialize
+    tipos_trabajo_path = "/v0/empresas/comunes/tiposTrabajo"
+    response = self.get(tipos_trabajo_path, @@options)
+
+    @@tipos_trabajo = Parser.parse_response_to_json(response)
+  end
+
+  def self.areas_estudio
+    @@areas_estudio.empty? ? get_areas_estudio : @@areas_estudio
   end
 
   # Servicios de estudios de los postulantes
-  def areas_estudio 
-    initialize
+  def self.get_areas_estudio 
+    Bumeran.initialize
     areas_estudio_path = "/v0/estudios/areasEstudio" 
-    response = self.class.get(areas_estudio_path, @@options)
+    response = self.get(areas_estudio_path, @@options)
 
-    return parse_response_to_json(response)
+    @@areas_estudio = Parser.parse_response_to_json(response)
   end
 
-  def estados_estudio
-    initialize
+  def self.estados_estudio
+    @@estados_estudio.empty? ? get_estados_estudio : @@estados_estudio
+  end
+
+  def self.get_estados_estudio
+    Bumeran.initialize
     estados_estudio_path = "/v0/estudios/estadosEstudio" 
-    response = self.class.get(estados_estudio_path, @@options)
+    response = self.get(estados_estudio_path, @@options)
 
-    return parse_response_to_json(response)
+    @@estados_estudio = Parser.parse_response_to_json(response)
   end
 
-  def tipos_estudio
-    initialize
+  def self.tipos_estudio 
+    @@tipos_estudio.empty? ? get_tipos_estudio : @@tipos_estudio
+  end
+
+  def self.get_tipos_estudio
+    Bumeran.initialize
     tipos_estudio_path = "/v0/estudios/tiposEstudio" 
-    response = self.class.get(tipos_estudio_path, @@options)
+    response = self.get(tipos_estudio_path, @@options)
 
-    return parse_response_to_json(response)
+    @@tipos_estudio = Parser.parse_response_to_json(response)
   end
 
-  def get_estudio(estudio_id)
-    initialize
+  def self.get_estudio(estudio_id)
+    Bumeran.initialize
     estudio_path = "/v0/estudios/#{estudio_id}" 
-    response = self.class.get(estudio_path, @@options)
+    response = self.get(estudio_path, @@options)
 
-    return parse_response_to_json(response)
+    return Parser.parse_response_to_json(response)
   end
 
   # Servicios de la experiencia laboral de los postulantes
-  def get_experiencia_laboral(experiencia_laboral_id)
-    initialize
+  def self.get_experiencia_laboral(experiencia_laboral_id)
+    Bumeran.initialize
     experiencia_laboral_path = "/v0/experienciaLaborales/#{experiencia_laboral_id}" 
-    response = self.class.get(experiencia_laboral_path, @@options)
+    response = self.get(experiencia_laboral_path, @@options)
 
-    return parse_response_to_json(response)
+    return Parser.parse_response_to_json(response)
   end
 
   # Servicio de postulaciones a los avisos publicados por las empresas
-  def get_postulacion(postulacion_id)
-    initialize
+  def self.get_postulacion(postulacion_id)
+    Bumeran.initialize
     postulaciones_path = "/v0/empresas/postulaciones/#{postulacion_id}" 
-    response = self.class.get(postulaciones_path, @@options)
+    response = self.get(postulaciones_path, @@options)
 
-    return parse_response_to_json(response)
+    return Parser.parse_response_to_json(response)
   end
 
-  def discard_postulacion(postulacion_id)
-    initialize
+  def self.discard_postulacion(postulacion_id)
+    Bumeran.initialize
     discard_postulaciones_path = "/v0/empresas/postulaciones/#{postulacion_id}/descartar" 
-    response = self.class.put(discard_postulaciones_path, @@options)
+    response = self.put(discard_postulaciones_path, @@options)
 
-    return parse_response_to_json(response)
+    return Parser.parse_response_to_json(response)
   end
 
   
-  def login(client_id=@@client_id, username=@@username, password=@@password, grant_type=@@grant_type)
+  def self.login(client_id=@@client_id, username=@@username, password=@@password, grant_type=@@grant_type)
     login_path =  "/v0/empresas/usuarios/login"
     # POST /v0/empresas/usuarios/login
     # sends post request with:
@@ -323,12 +360,12 @@ class Bumeran
     #   "expiresIn": 1199
     # }
 
-    response = self.class.post(login_path, query: {grant_type: grant_type, client_id: client_id, username: username, password: password})
+    response = self.post(login_path, query: {grant_type: grant_type, client_id: client_id, username: username, password: password})
 
-    if parse_response_to_json(response)
+    if Parser.parse_response_to_json(response)
       # "All good!"
       @@access_token = response["accessToken"]
-      token_type   = response["tokenType"]
+      @@token_type   = response["tokenType"]
       @@expires_in   = response["expiresIn"]
       @@access_token_updated_at = Time.now
       return @@access_token
@@ -336,39 +373,40 @@ class Bumeran
   end 
 
 
-  private
-  def parse_response(response)
-    case response.code
-      when 200..201
-        # "All good!"
-        return response.body
-      when 401
-        raise "Error 401: Unauthorized. Check login info.\n #{response.body}"
-      when 403
-        raise "Error 403: Forbidden"
-      when 404
-        raise "Error 404 not found"
-      when 500...600
-        raise "ZOMG ERROR #{response.code}: #{response.body}"
-      else
-        raise "Error #{response.code}, unkown response: #{response.body}"
+  class Parser
+    def self.parse_response(response)
+      case response.code
+        when 200..201
+          # "All good!"
+          return response.body
+        when 401
+          raise "Error 401: Unauthorized. Check login info.\n #{response.body}"
+        when 403
+          raise "Error 403: Forbidden"
+        when 404
+          raise "Error 404 not found"
+        when 500...600
+          raise "ZOMG ERROR #{response.code}: #{response.body}"
+        else
+          raise "Error #{response.code}, unkown response: #{response.body}"
+      end
     end
-  end
-  def parse_response_to_json(response)
-    case response.code
-      when 200..201
-        # "All good!"
-        return JSON.parse(response.body)
-      when 401
-        raise "Error 401: Unauthorized. Check login info.\n #{response.body}"
-      when 403
-        raise "Error 403: Forbidden"
-      when 404
-        raise "Error 404 not found"
-      when 500...600
-        raise "ZOMG ERROR #{response.code}: #{response.body}"
-      else
-        raise "Error #{response.code}, unkown response: #{response.body}"
+    def self.parse_response_to_json(response)
+      case response.code
+        when 200..201
+          # "All good!"
+          return JSON.parse(response.body)
+        when 401
+          raise "Error 401: Unauthorized. Check login info.\n #{response.body}"
+        when 403
+          raise "Error 403: Forbidden"
+        when 404
+          raise "Error 404 not found"
+        when 500...600
+          raise "ZOMG ERROR #{response.code}: #{response.body}"
+        else
+          raise "Error #{response.code}, unkown response: #{response.body}"
+      end
     end
   end
 end
