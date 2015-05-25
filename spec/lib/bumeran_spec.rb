@@ -10,15 +10,17 @@ describe Bumeran do
   end
 
   it 'can publish', publish: true do
+    publication = BumeranFixture.publication
     bumeran = Bumeran.new
-    result = bumeran.test_publish
+    result = bumeran.publish(publication.body.to_json)
     pp result
     result.to_i.should > 0
   end
 
   it 'can get publication', publish: true do
+    publication = BumeranFixture.publication
     bumeran = Bumeran.new
-    publication_id = bumeran.test_publish.to_i
+    publication_id = bumeran.publish(publication.body.to_json)
     pp publication_id
     #binding.pry
     
@@ -27,7 +29,6 @@ describe Bumeran do
     #binding.pry
     pp publication
   end
-  
 
   it 'can get areas', getters: true do
     bumeran = Bumeran.new
