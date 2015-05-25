@@ -10,6 +10,8 @@ RSpec.configure do |config|
   config.run_all_when_everything_filtered = true
   config.filter_run :focus
 
+  Dir["./spec/fixtures/*.rb"].sort.each { |f| require f }
+
   # Run specs in random order to surface order dependencies. If you find an
   # order dependency and want to debug it, you can fix the order by providing
   # the seed, which is printed after each run.
@@ -18,5 +20,10 @@ RSpec.configure do |config|
 end
 
 require 'bumeran'
-require 'bumeran_initializer_helper'
+require 'publication'
+begin
+  require 'bumeran_initializer_helper'
+rescue Exception => e
+  raise "bumeran_initializer_helper does't exist, follow the instructions in the README"
+end
 require 'pry-byebug'
