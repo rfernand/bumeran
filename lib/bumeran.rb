@@ -77,11 +77,57 @@ module Bumeran
     end
   end 
 
-  # Publicaciones
-  def self.publish(json)
+  # Publicaciones / Avisos
+
+  # alias
+  def self.publicar_aviso(aviso_id, plan_publicacion_id, pais_id)
+    Bumeran.publish_publication(aviso_id, plan_publicacion_id, pais_id)
+  end
+
+  # alias
+  def self.create_aviso(json)
+    Bumeran.create_publication(json)
+  end
+
+  # alias
+  def self.get_aviso(aviso_id)
+    Bumeran.get_publication(aviso_id)
+  end
+
+  # alias
+  def self.destroy_aviso(aviso_id)
+    Bumeran.destroy_publication(aviso_id)
+  end
+
+  # creates and publish a publication
+  def self.publish(json, plan_publication_id, pais_id)
+    publication_id = Bumeran.create_publication(json)
+    Bumeran.publish_publication(publication_id, plan_publicacion_id, pais_id)
+  end
+
+  #
+
+  def self.create_publication(json)
     Bumeran.initialize
-    new_publish_path = "/v0/empresas/avisos"
-    response = self.put(new_publish_path, @@options.merge(body: json, headers: { "Accept" => "application/json", "Content-Type" => "application/json"}))
+    create_publication_path = "/v0/empresas/avisos"
+    response = self.put(create_publication_path, @@options.merge(body: json, headers: { "Accept" => "application/json", "Content-Type" => "application/json"}))
+
+    if Parser.parse_response(response)
+      case response.code
+        when 201
+          # "Publication created, All good!"
+          return response # body contains id del proceso publicado
+        when 200
+          # "TODO: Uhm.. no idea, is this good?"
+          return response # body contains id del proceso publicado?
+      end
+    end
+  end
+
+  def self.publish_publication(publication_id, plan_publication_id, pais_id)
+    Bumeran.initialize
+    publish_publication_path = "/v0/empresas/avisos/#{aviso_id}/publicacion/#{plan_publication_id}"
+    response = self.put(publish_publication_path, @@options.merge(query: @@options[:query].merge({paisId: pais_id})))
 
     if Parser.parse_response(response)
       case response.code
@@ -96,10 +142,17 @@ module Bumeran
   end
 
   def self.get_publication(publication_id)
-    get_publish_path = "/v0/empresas/avisos/#{publication_id}"
-    response = self.get(get_publish_path, @@options)
+    get_publication_path = "/v0/empresas/avisos/#{publication_id}"
+    response = self.get(get_publication_path, @@options)
 
     return Parser.parse_response_to_json(response)
+  end
+
+  def self.destroy_publication(publication_id)
+    destroy_publication_path = "/v0/empresas/avisos/#{publication_id}"
+    response = self.delete(destroy_publication_path, @@options)
+
+    return Parser.parse_response(response)
   end
 
   def self.areas
