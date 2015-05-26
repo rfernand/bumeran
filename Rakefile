@@ -23,4 +23,7 @@ RSpec::Core::RakeTask.new
 
 task :default => :spec
 task :test => :spec
+task :console do
+  exec "pry -r bumeran -I ./"
+end
 

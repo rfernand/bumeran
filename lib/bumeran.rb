@@ -37,13 +37,24 @@ module Bumeran
   mattr_accessor :options
   @@options = nil
 
-  @@areas = []
-  @@subareas = {}
-  @@paises = []
-  @@zonas = {}
-  @@localidades = {}
-  @@plan_publicaciones= {}
-  @@frecuencias_pago = []
+  @@areas               = []
+  @@subareas            = []
+  @@paises              = []
+  @@zonas               = []
+  @@localidades         = []
+  @@plan_publicaciones  = []
+  @@frecuencias_pago    = []
+  @@idiomas             = []
+  @@industrias          = []
+  @@niveles_idiomas     = []
+  @@tipos_trabajo       = []
+  @@areas_estudio       = []
+  @@estados_estudio     = []
+  @@tipos_estudio       = []
+  @@direcciones         = []
+  @@denominaciones      = []
+
+  
 
   # Default way to setup Bumeran.
   def self.setup
@@ -99,7 +110,7 @@ module Bumeran
     if @@subareas.empty?
       areas.each do |area|
         area["subareas"] = get_subareas_in(area["id"])
-        @@subareas[area["id"]] = area["subareas"]
+        area["subareas"].map{|subarea| @@subareas << subarea}
       end
     end
     @@subareas
@@ -127,10 +138,11 @@ module Bumeran
   end
 
   def self.zonas
+    # zonas by pais
     if @@zonas.empty?
       paises.each do |pais|
         pais["zonas"] = get_zonas_in(pais["id"])
-        @@zonas[pais["id"]] = pais["zonas"]
+        pais["zonas"].map{|zona| @@zonas << zona}
       end
     end
     @@zonas
@@ -139,8 +151,12 @@ module Bumeran
   def self.localidades
     if @@localidades.empty?
       zonas.each do |zona|
-        zona["localidades"] = get_localidades_in(zona["id"])
-        @@localidades[zona["id"]] = zona["localidades"]
+        begin
+          zona["localidades"] = get_localidades_in(zona["id"])
+          zona["localidades"].map{|localidad| @@localidades << localidad}
+        rescue StandardError => e
+          pp "Error at get_localidades_in(#{zona["id"]}): #{e}"
+        end
       end
     end
     @@localidades
@@ -175,10 +191,10 @@ module Bumeran
     if @@plan_publicaciones.empty?
       paises.each do |pais|
         pais["plan_publicaciones"] = get_plan_publicaciones_in(pais["id"])
-        @@plan_publicaciones[pais["id"]] = pais["plan_publicaciones"]
+        pais["plan_publicaciones"].map{|plan_publicacion| @@plan_publicaciones << plan_publicacion}
       end
     end
-    @@subareas
+    @@plan_publicaciones
   end
 
   def self.get_plan_publicaciones_in(pais_id)
@@ -262,7 +278,7 @@ module Bumeran
   end
 
   def self.tipos_trabajo
-    @@tipos_trabajo.empty? ? get_tipos_trabajos : @@tipos_trabajo
+    @@tipos_trabajo.empty? ? get_tipos_trabajo : @@tipos_trabajo
   end
 
   def self.get_tipos_trabajo
@@ -318,6 +334,24 @@ module Bumeran
     return Parser.parse_response_to_json(response)
   end
 
+  def self.get_conocimiento(conocimiento_id)
+    Bumeran.initialize
+    conocimiento_path = "/v0/conocimientos/#{conocimiento_id}"
+    response = self.get(conocimiento_path, @@options)
+
+    Parser.parse_response_to_json(response)
+  end
+
+
+  def self.get_conocimiento_custom(conocimiento_id)
+    Bumeran.initialize
+    conocimiento_custom_path = "/v0/conocimientos/custom/#{conocimiento_id}"
+    response = self.get(conocimiento_custom_path, @@options)
+
+    Parser.parse_response_to_json(response)
+  end
+
+
   # Servicios de la experiencia laboral de los postulantes
   def self.get_experiencia_laboral(experiencia_laboral_id)
     Bumeran.initialize
@@ -330,8 +364,16 @@ module Bumeran
   # Servicio de postulaciones a los avisos publicados por las empresas
   def self.get_postulacion(postulacion_id)
     Bumeran.initialize
-    postulaciones_path = "/v0/empresas/postulaciones/#{postulacion_id}" 
-    response = self.get(postulaciones_path, @@options)
+    postulacion_path = "/v0/empresas/postulaciones/#{postulacion_id}" 
+    response = self.get(postulacion_path, @@options)
+
+    return Parser.parse_response_to_json(response)
+  end
+
+  def self.get_curriculum(curriculum_id)
+    Bumeran.initialize
+    curriculum_path = "/v0/empresas/curriculums/#{curriculum_id}" 
+    response = self.get(curriculum_path, @@options)
 
     return Parser.parse_response_to_json(response)
   end
@@ -347,19 +389,6 @@ module Bumeran
   
   def self.login(client_id=@@client_id, username=@@username, password=@@password, grant_type=@@grant_type)
     login_path =  "/v0/empresas/usuarios/login"
-    # POST /v0/empresas/usuarios/login
-    # sends post request with:
-    #   grant_type=   Tipo de permiso de OAuth2  query string
-    #   client_id=   Identificador del cliente de OAuth2 query string
-    #   username=    Nombre de usuario query string
-    #   password=    Password del usuario query string
-    # recieves json
-    # {
-    #   "accessToken": "bdf48bc4-6b7a-4de9-82e5-5bf278d23855",
-    #   "tokenType": "bearer",
-    #   "expiresIn": 1199
-    # }
-
     response = self.post(login_path, query: {grant_type: grant_type, client_id: client_id, username: username, password: password})
 
     if Parser.parse_response_to_json(response)
@@ -386,9 +415,9 @@ module Bumeran
         when 404
           raise "Error 404 not found"
         when 500...600
-          raise "ZOMG ERROR #{response.code}: #{response.body}"
+          raise "ZOMG ERROR #{response.code}: #{response.request.path}, #{response.body}"
         else
-          raise "Error #{response.code}, unkown response: #{response.body}"
+          raise "Error #{response.code}, unkown response: #{response.request.path}, #{response.body}"
       end
     end
     def self.parse_response_to_json(response)
@@ -403,9 +432,9 @@ module Bumeran
         when 404
           raise "Error 404 not found"
         when 500...600
-          raise "ZOMG ERROR #{response.code}: #{response.body}"
+          raise "ZOMG ERROR #{response.code}: #{response.request.path}, #{response.body}"
         else
-          raise "Error #{response.code}, unkown response: #{response.body}"
+          raise "Error #{response.code}, unkown response: #{response.request.path}, #{response.body}"
       end
     end
   end
