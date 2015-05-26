@@ -1,6 +1,6 @@
 class BumeranFixture
   def self.publication
-    publication =  Publication.new
+    publication =  Bumeran::Publication.new
     publication.body[:descripcion]             = "Descripcion de la publicacion de prueba"    # required
     publication.body[:titulo]                  = "Publicacion de prueba"                      # required
     #publication.body[:referencia]              = ""  #optional

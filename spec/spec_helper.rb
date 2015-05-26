@@ -20,7 +20,7 @@ RSpec.configure do |config|
 end
 
 require 'bumeran'
-require 'publication'
+require 'bumeran/publication'
 begin
   require 'bumeran_initializer_helper'
 rescue Exception => e

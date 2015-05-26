@@ -439,3 +439,5 @@ module Bumeran
     end
   end
 end
+
+require 'bumeran/publication'
