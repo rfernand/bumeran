@@ -14,11 +14,19 @@ Gem::Specification.new do |s|
   s.description = "A gem to access the Bumeran api: https://developers.bumeran.com"
   s.license     = "MIT"
 
-  s.files = Dir["{app,config,db,lib}/**/*", "MIT-LICENSE", "Rakefile", "README.rdoc"]
-  s.test_files = Dir["test/**/*"]
+  #s.files = Dir["{app,config,db,lib}/**/*", "MIT-LICENSE", "Rakefile", "README.rdoc"]
+  #s.test_files = Dir["test/**/*"]
+
+  s.files         = `git ls-files`.split("\n")
+  s.test_files    = `git ls-files -- {test,spec,features}/*`.split("\n")
+  s.executables   = `git ls-files -- bin/*`.split("\n").map{ |f| File.basename(f) }
+  s.require_paths = ["lib"]
 
   s.add_dependency "rails", "~> 3.2.19"
   s.add_dependency "httparty", ">= 0.13.3"
+  #s.add_dependency "activesupport", "3.2.19"
 
-  #s.add_development_dependency "sqlite3"
+  s.add_development_dependency 'rake'
+  s.add_development_dependency "rspec"
+  s.add_development_dependency "pry-byebug"
 end
