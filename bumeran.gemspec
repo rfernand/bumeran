@@ -6,7 +6,7 @@ require "bumeran/version"
 # Describe your gem and declare its dependencies:
 Gem::Specification.new do |s|
   s.name        = "bumeran"
-  s.version     = BumeranConfiguration::VERSION
+  s.version     = Bumeran::VERSION
   s.authors     = ["Rodrigo Fernandez"]
   s.email       = ["chaotiklv@gmail.com"]
   s.homepage    = "https://github.com/rfernand/bumeran"
