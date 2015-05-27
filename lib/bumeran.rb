@@ -95,14 +95,20 @@ module Bumeran
   end
 
   # alias
+  def self.get_postulaciones_en_aviso(aviso_id)
+    Bumeran.get_postulations_in_publication(aviso_id)
+  end
+
+  # alias
   def self.destroy_aviso(aviso_id)
     Bumeran.destroy_publication(aviso_id)
   end
 
   # creates and publish a publication
-  def self.publish(json, plan_publication_id, pais_id)
+  def self.publish(json, pais_id, plan_publication_id)
     publication_id = Bumeran.create_publication(json)
-    Bumeran.publish_publication(publication_id, plan_publicacion_id, pais_id)
+    Bumeran.publish_publication(publication_id, pais_id, plan_publication_id)
+    return publication_id
   end
 
   #
@@ -124,9 +130,9 @@ module Bumeran
     end
   end
 
-  def self.publish_publication(publication_id, plan_publication_id, pais_id)
+  def self.publish_publication(publication_id, pais_id, plan_publication_id)
     Bumeran.initialize
-    publish_publication_path = "/v0/empresas/avisos/#{aviso_id}/publicacion/#{plan_publication_id}"
+    publish_publication_path = "/v0/empresas/avisos/#{publication_id}/publicacion/#{plan_publication_id}"
     response = self.put(publish_publication_path, @@options.merge(query: @@options[:query].merge({paisId: pais_id})))
 
     if Parser.parse_response(response)
@@ -142,13 +148,23 @@ module Bumeran
   end
 
   def self.get_publication(publication_id)
+    Bumeran.initialize
     get_publication_path = "/v0/empresas/avisos/#{publication_id}"
     response = self.get(get_publication_path, @@options)
 
     return Parser.parse_response_to_json(response)
   end
 
+  def self.get_postulations_in_publication(publication_id)
+    Bumeran.initialize
+    get_postulations_in_publication_path = "/v0/empresas/avisos/#{publication_id}/postulaciones"
+    response = self.get(get_postulations_in_publication_path, @@options)
+
+    return Parser.parse_response_to_json(response)
+  end
+
   def self.destroy_publication(publication_id)
+    Bumeran.initialize
     destroy_publication_path = "/v0/empresas/avisos/#{publication_id}"
     response = self.delete(destroy_publication_path, @@options)
 
@@ -431,7 +447,12 @@ module Bumeran
     return Parser.parse_response_to_json(response)
   end
 
+  # alias
   def self.discard_postulacion(postulacion_id)
+    Bumeran.discard_postulation(postulacion_id)
+  end
+
+  def self.discard_postulation(postulacion_id)
     Bumeran.initialize
     discard_postulaciones_path = "/v0/empresas/postulaciones/#{postulacion_id}/descartar" 
     response = self.put(discard_postulaciones_path, @@options)
