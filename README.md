@@ -10,7 +10,7 @@ Bumeran works with Rails 3.2 onwards. You can add it to your Gemfile with:
 gem 'bumeran'
 ```
 
-...or can fetch the lastest developer version with:
+...or can fetch the latest developer version with:
 
 ```ruby
 gem 'bumeran', :git => 'git@github.com:rfernand/bumeran.git', :branch => 'develop'
@@ -32,18 +32,31 @@ end
 
 
 And more that don't need an ID. All return a json object, and raise an error (401, 404, 500) if there was one:
-### Create a new publication
+### Create and publish a new publication
 ```ruby
 publication = Bumeran::Publication.new
-Bumeran.publish(publication.body.to_json)
+pais_id = 1 # 1 = Argentina
+plan_publication_id = 30 # 30 = simple
+Bumeran.publish(publication.body.to_json, pais_id, plan_publication_id)
 ```
-### Get a publication
+### Get a publication data
 ```ruby
 Bumeran.get_publication(publication_id)
+Bumeran.get_postulations_in_publication(publication_id)
 ```
-### And a lot of more getters
 
-They recieve a corresponding object id and return a json object.
+### Destroy a publication
+```ruby
+Bumeran.destroy_publication(publication_id)
+```
+### Discard a postulation
+```ruby
+Bumeran.discard_postulation(publication_id)
+```
+
+### More getters
+
+They receive a corresponding object id and return a json object.
 
 ```ruby
 Bumeran.get_estudio(estudio_id)
@@ -76,5 +89,7 @@ Bumeran.tipos_trabajo
 Bumeran.areas_estudio
 Bumeran.estados_estudio
 Bumeran.tipos_estudio
-Bumeran.tipos_estudio
 ```
+
+## TODO
+ - Add the missing methods of the postulaciones service
