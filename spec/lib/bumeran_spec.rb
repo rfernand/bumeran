@@ -8,23 +8,35 @@ describe Bumeran do
     Bumeran.has_valid_access_token?.should be_true
   end
 
-  it 'can publish', publish: true do
+  it 'can create publication', create: true do
     publication = BumeranFixture.publication
-    result = Bumeran.publish(publication.body.to_json)
+    result = Bumeran.create_aviso(publication.body.to_json)
     pp result
     result.to_i.should > 0
   end
 
-  it 'can get publication', publish: true do
+  it 'can publish publication', create: true do
     publication = BumeranFixture.publication
-    publication_id = Bumeran.publish(publication.body.to_json)
+    published_publication_id = Bumeran.publish(publication.body.to_json, 1, 30) # pais Argentina = 1, plan publicacion "simple" = 30 
+    pp published_publication_id
+    published_publication_id.to_i.should > 0
+  end
+
+  it 'can create, get, publish and destroy publication', publish: true do
+    publication = BumeranFixture.publication
+    publication_id = Bumeran.create_aviso(publication.body.to_json)
     pp publication_id
-    #binding.pry
-    
     publication_id.should > 0
+
     publication = Bumeran.get_publication(publication_id)
-    #binding.pry
     pp publication
+    publication["id"].should > 0
+
+    published_publication = Bumeran.publicar_aviso(publication_id, 1, 30) # pais Argentina = 1, plan publicacion "simple" = 30 
+    pp published_publication
+
+    deleted_publication = Bumeran.destroy_aviso(publication_id)
+    pp deleted_publication
   end
 
   it 'can get areas', getters: true do
