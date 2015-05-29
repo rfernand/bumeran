@@ -39,8 +39,9 @@ module Bumeran
 
   @@areas               = []
   @@subareas            = []
-  @@paises              = []
-  @@zonas               = []
+  @@paises_json         = []
+  @@paises              = {}
+  @@zonas               = {}
   @@localidades         = []
   @@plan_publicaciones  = []
   @@frecuencias_pago    = []
@@ -209,12 +210,51 @@ module Bumeran
   def self.zonas
     # zonas by pais
     if @@zonas.empty?
-      paises.each do |pais|
-        pais["zonas"] = get_zonas_in(pais["id"])
-        pais["zonas"].map{|zona| @@zonas << zona}
+      paises.each do |pais_id, pais|
+        pais["zonas"] ? pais["zonas"].merge!(get_zonas_in(pais_id)) : pais["zonas"] = get_zonas_in(pais_id)
+        #pais["zonas"].map{|zona| @@zonas << zona}
       end
     end
     @@zonas
+  end
+
+  SERVICES = {
+    paises: {object: :pais},
+    zonas: {object: :zona, parent: :pais, parent_service: :paises},
+    localidades: {object: :localidad, parent: :zona, parent_service: :zonas}
+  }
+  # GENERIC HELPER
+  def self.generic_find_by_id(objects_sym, object_id)                       #def self.pais(pais_id)
+    object = send(objects_sym).select{|id, content| id == object_id}        #  pais = paises.select{|id, pais| id == pais_id}
+    object ? object[object_id] : nil                                        #  pais ? pais[pais_id] : nil
+  end                                                                       #end                                               
+
+  def self.generic_find_all_in(objects_sym, parent_object_sym, parent_service_sym, parent_object_id)
+    if class_variable_get("@@#{objects_sym}").empty?                          # if @@zonas.empty?
+      parent_object = send(parent_service_sym)[parent_object_id] #   pais = paises[pais_id]
+
+      if parent_object[objects_sym.to_s] # if pais["zonas"]
+        parent_object[objects_sym.to_s].merge!(send("get_#{objects_sym}_in", parent_object_id)) # pais["zonas"].merge!(get_zonas_in(pais_id)) 
+      else
+        parent_object[objects_sym.to_s] = send("get_#{objects_sym}_in", parent_object_id)       # pais["zonas"] = get_zonas_in(pais_id)
+      end
+    else
+      send(parent_object_sym, parent_object_id)[objects_sym.to_s] # pais(pais_id)["zonas"]
+    end
+  end
+
+  # Generation of dynamic static methods 
+  SERVICES.each do |service_name, service|
+
+    define_singleton_method(service[:object]) do |object_id|
+      generic_find_by_id(service_name, object_id)
+    end
+
+    if service[:parent]
+      define_singleton_method("#{service_name}_in") do |parent_object_id|
+        generic_find_all_in(service_name, service[:parent], service[:parent_service], parent_object_id)
+      end
+    end
   end
 
   def self.localidades
@@ -237,7 +277,8 @@ module Bumeran
     paises_path = "/v0/empresas/locacion/paises" 
     response = self.get(paises_path, @@options)
 
-    @@paises = Parser.parse_response_to_json(response)
+    @@paises_json = Parser.parse_response_to_json(response)
+    Parser.parse_json_to_hash(@@paises_json, @@paises)
   end
 
   def self.get_zonas_in(pais_id)
@@ -245,7 +286,9 @@ module Bumeran
     zonas_path = "/v0/empresas/locacion/paises/#{pais_id}/zonas" 
     response = self.get(zonas_path, @@options)
 
-    Parser.parse_response_to_json(response)
+    json_zonas = Parser.parse_response_to_json(response)
+    Parser.parse_json_to_hash(json_zonas, @@zonas) # to save the zone in the zonas hash
+    Parser.parse_json_to_hash(json_zonas, {})      # to return only the zonas from the country
   end
 
   def self.get_localidades_in(zona_id)
@@ -477,6 +520,11 @@ module Bumeran
 
 
   class Parser
+    def self.parse_json_to_hash(json, hash)
+      json.each{|object| hash[object["id"]] ? hash[object["id"]].merge!(object) : hash[object["id"]] = object}
+      return hash
+    end
+
     def self.parse_response(response)
       case response.code
         when 200..201
