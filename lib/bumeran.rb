@@ -174,7 +174,7 @@ module Bumeran
   # Generation of service helpers
   SERVICES = {
     areas: {object: :area},
-    subareas: {object: :subarea, parent: :area},
+    subareas: {object: :subarea, parent: :area, parent_service: :areas},
     paises: {object: :pais},
     zonas: {object: :zona, parent: :pais, parent_service: :paises},
     localidades: {object: :localidad, parent: :zona, parent_service: :zonas},
@@ -220,7 +220,7 @@ module Bumeran
     end
 
     # def self.zonas_in(pais_id)
-    if service[:parent]
+    if service[:parent] && service[:parent_service]
       define_singleton_method("#{service_name}_in") do |parent_object_id|
         generic_find_all_in(service_name, service[:parent], service[:parent_service], parent_object_id)
       end
@@ -363,7 +363,9 @@ module Bumeran
     localidades_path = "/v0/empresas/locacion/zonas/#{zona_id}/localidades" 
     response = self.get(localidades_path, @@options)
 
-    Parser.parse_response_to_json(response)
+    json = Parser.parse_response_to_json(response)
+    Parser.parse_json_to_hash(json, @@localidades) # to save the localidades
+    Parser.parse_json_to_hash(json, {})            # to return only the localidades from the zone
   end
 
   def self.get_plan_publicaciones_in(pais_id)
