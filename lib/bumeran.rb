@@ -37,23 +37,22 @@ module Bumeran
   mattr_accessor :options
   @@options = nil
 
-  @@areas               = []
-  @@subareas            = []
-  @@paises_json         = []
+  @@areas               = {}
+  @@subareas            = {}
   @@paises              = {}
   @@zonas               = {}
-  @@localidades         = []
-  @@plan_publicaciones  = []
-  @@frecuencias_pago    = []
-  @@idiomas             = []
-  @@industrias          = []
-  @@niveles_idiomas     = []
-  @@tipos_trabajo       = []
-  @@areas_estudio       = []
-  @@estados_estudio     = []
-  @@tipos_estudio       = []
-  @@direcciones         = []
-  @@denominaciones      = []
+  @@localidades         = {}
+  @@plan_publicaciones  = {}
+  @@frecuencias_pago    = {}
+  @@idiomas             = {}
+  @@industrias          = {}
+  @@niveles_idiomas     = {}
+  @@tipos_trabajo       = {}
+  @@areas_estudio       = {}
+  @@estados_estudio     = {}
+  @@tipos_estudio       = {}
+  @@direcciones         = {}
+  @@denominaciones      = {}
 
   
 
@@ -172,35 +171,74 @@ module Bumeran
     return Parser.parse_response(response)
   end
 
+  # Generation of service helpers
+  SERVICES = {
+    areas: {object: :area},
+    subareas: {object: :subarea, parent: :area},
+    paises: {object: :pais},
+    zonas: {object: :zona, parent: :pais, parent_service: :paises},
+    localidades: {object: :localidad, parent: :zona, parent_service: :zonas},
+    plan_publicaciones: {object: :plan_publicacion, parent: :pais, parent_service: :paises},
+    denominaciones: {object: :denominacion},
+    direcciones: {object: :direccion},
+    frecuencias_pago: {object: :frencuencia_pago},
+    idiomas: {object: :idioma},
+    industrias: {object: :industria},
+    niveles_idiomas: {object: :niveles_idioma},
+    tipos_trabajo: {object: :tipo_trabajo},
+    areas_estudio: {object: :area_estudio},
+    estados_estudio: {object: :estado_estudio},
+    tipos_estudio: {object: :tipo_estudio}
+  }
+
+  # GENERIC HELPER
+  def self.generic_find_by_id(objects_sym, object_id)                       #def self.pais(pais_id)
+    object = send(objects_sym).select{|id, content| id == object_id}        #  pais = paises.select{|id, pais| id == pais_id}
+    object ? object[object_id] : nil                                        #  pais ? pais[pais_id] : nil
+  end                                                                       #end                                               
+
+  def self.generic_find_all_in(objects_sym, parent_object_sym, parent_service_sym, parent_object_id)  
+    if class_variable_get("@@#{objects_sym}").empty?                                                    # if @@zonas.empty?
+      parent_object = send(parent_service_sym)[parent_object_id]                                        #   pais = paises[pais_id]
+
+      if parent_object[objects_sym.to_s]                                                                #   if pais["zonas"]
+        parent_object[objects_sym.to_s].merge!(send("get_#{objects_sym}_in", parent_object_id))         #      pais["zonas"].merge!(get_zonas_in(pais_id)) 
+      else                                                                                              #   else
+        parent_object[objects_sym.to_s] = send("get_#{objects_sym}_in", parent_object_id)               #      pais["zonas"] = get_zonas_in(pais_id)
+      end                                                                                               #   end
+    else                                                                                                # else
+      send(parent_object_sym, parent_object_id)[objects_sym.to_s] # pais(pais_id)["zonas"]              #   pais(pais_id)["zonas"]
+    end                                                                                                 # end
+  end
+
+  # Generation of dynamic static methods 
+  SERVICES.each do |service_name, service|
+
+    #def self.pais(pais_id)
+    define_singleton_method(service[:object]) do |object_id|  
+      generic_find_by_id(service_name, object_id)  
+    end
+
+    # def self.zonas_in(pais_id)
+    if service[:parent]
+      define_singleton_method("#{service_name}_in") do |parent_object_id|
+        generic_find_all_in(service_name, service[:parent], service[:parent_service], parent_object_id)
+      end
+    end
+  end
+
+  # Helpers
   def self.areas
     @@areas.empty? ? get_areas : @@areas
   end
 
   def self.subareas
     if @@subareas.empty?
-      areas.each do |area|
-        area["subareas"] = get_subareas_in(area["id"])
-        area["subareas"].map{|subarea| @@subareas << subarea}
+      areas.each do |area_id, area|
+        area["subareas"] ? area["subarea"].merge!(get_subareas_in(area_id)) : area["subarea"] = get_subareas_in(area_id)
       end
     end
     @@subareas
-  end
-
-  # Servicios comunes
-  def self.get_areas #jobs areas
-    Bumeran.initialize
-    areas_path = "/v0/empresas/comunes/areas" 
-    response = self.get(areas_path, @@options)
-
-    @@areas = Parser.parse_response_to_json(response)
-  end
-
-  def self.get_subareas_in(area_id)
-    Bumeran.initialize
-    subareas_path = "/v0/empresas/comunes/areas/#{area_id}/subAreas" 
-    response = self.get(subareas_path, @@options)
-
-    Parser.parse_response_to_json(response)
   end
 
   def self.paises
@@ -212,57 +250,16 @@ module Bumeran
     if @@zonas.empty?
       paises.each do |pais_id, pais|
         pais["zonas"] ? pais["zonas"].merge!(get_zonas_in(pais_id)) : pais["zonas"] = get_zonas_in(pais_id)
-        #pais["zonas"].map{|zona| @@zonas << zona}
       end
     end
     @@zonas
   end
 
-  SERVICES = {
-    paises: {object: :pais},
-    zonas: {object: :zona, parent: :pais, parent_service: :paises},
-    localidades: {object: :localidad, parent: :zona, parent_service: :zonas}
-  }
-  # GENERIC HELPER
-  def self.generic_find_by_id(objects_sym, object_id)                       #def self.pais(pais_id)
-    object = send(objects_sym).select{|id, content| id == object_id}        #  pais = paises.select{|id, pais| id == pais_id}
-    object ? object[object_id] : nil                                        #  pais ? pais[pais_id] : nil
-  end                                                                       #end                                               
-
-  def self.generic_find_all_in(objects_sym, parent_object_sym, parent_service_sym, parent_object_id)
-    if class_variable_get("@@#{objects_sym}").empty?                          # if @@zonas.empty?
-      parent_object = send(parent_service_sym)[parent_object_id] #   pais = paises[pais_id]
-
-      if parent_object[objects_sym.to_s] # if pais["zonas"]
-        parent_object[objects_sym.to_s].merge!(send("get_#{objects_sym}_in", parent_object_id)) # pais["zonas"].merge!(get_zonas_in(pais_id)) 
-      else
-        parent_object[objects_sym.to_s] = send("get_#{objects_sym}_in", parent_object_id)       # pais["zonas"] = get_zonas_in(pais_id)
-      end
-    else
-      send(parent_object_sym, parent_object_id)[objects_sym.to_s] # pais(pais_id)["zonas"]
-    end
-  end
-
-  # Generation of dynamic static methods 
-  SERVICES.each do |service_name, service|
-
-    define_singleton_method(service[:object]) do |object_id|
-      generic_find_by_id(service_name, object_id)
-    end
-
-    if service[:parent]
-      define_singleton_method("#{service_name}_in") do |parent_object_id|
-        generic_find_all_in(service_name, service[:parent], service[:parent_service], parent_object_id)
-      end
-    end
-  end
-
   def self.localidades
     if @@localidades.empty?
-      zonas.each do |zona|
+      zonas.each do |zona_id, zona|
         begin
-          zona["localidades"] = get_localidades_in(zona["id"])
-          zona["localidades"].map{|localidad| @@localidades << localidad}
+          zona["localidades"] ? zona["localidades"].merge!(get_localidades_in(zona_id)) : zona["localidades"] = get_localidades_in(zona_id)
         rescue StandardError => e
           pp "Error at get_localidades_in(#{zona["id"]}): #{e}"
         end
@@ -271,14 +268,84 @@ module Bumeran
     @@localidades
   end
 
+  def self.plan_publicaciones 
+    if @@plan_publicaciones.empty?
+      paises.each do |pais_id, pais|
+        pais["plan_publicaciones"] ? pais["plan_publicaciones"].merge!(get_plan_publicaciones_in(pais_id)) : pais["plan_publicaciones"] = get_plan_publicaciones_in(pais_id)
+      end
+    end
+    @@plan_publicaciones
+  end
+
+  def self.denominaciones
+    @@denominaciones.empty? ? get_denominaciones : @@denominaciones
+  end
+
+  def self.direcciones
+    @@direcciones.empty? ? get_direcciones : @@direcciones
+  end
+
+  def self.frecuencias_pago
+    @@frecuencias_pago.empty? ? get_frecuencias_pago : @@frecuencias_pago
+  end
+
+  def self.idiomas
+    @@idiomas.empty? ? get_idiomas : @@idiomas
+  end
+
+  def self.industrias
+    @@industrias.empty? ? get_industrias : @@industrias
+  end
+
+  def self.niveles_idiomas
+    @@niveles_idiomas.empty? ? get_niveles_idiomas : @@niveles_idiomas
+  end
+
+  def self.tipos_trabajo
+    @@tipos_trabajo.empty? ? get_tipos_trabajo : @@tipos_trabajo
+  end
+
+  def self.areas_estudio
+    @@areas_estudio.empty? ? get_areas_estudio : @@areas_estudio
+  end
+
+  def self.estados_estudio
+    @@estados_estudio.empty? ? get_estados_estudio : @@estados_estudio
+  end
+
+  def self.tipos_estudio 
+    @@tipos_estudio.empty? ? get_tipos_estudio : @@tipos_estudio
+  end
+
+  # Servicios comunes
+  # Getters
+  def self.get_areas #jobs areas
+    Bumeran.initialize
+    areas_path = "/v0/empresas/comunes/areas" 
+    response = self.get(areas_path, @@options)
+
+    json = Parser.parse_response_to_json(response)
+    Parser.parse_json_to_hash(json, @@areas)
+  end
+
+  def self.get_subareas_in(area_id)
+    Bumeran.initialize
+    subareas_path = "/v0/empresas/comunes/areas/#{area_id}/subAreas" 
+    response = self.get(subareas_path, @@options)
+
+    json = Parser.parse_response_to_json(response)
+    Parser.parse_json_to_hash(json, @@subareas) # to save the subareas in the @@subareas
+    Parser.parse_json_to_hash(json, {})         # to return only the subareas in the area
+  end
+
   # Servicios generales asociados a datos de localización
   def self.get_paises
     Bumeran.initialize
     paises_path = "/v0/empresas/locacion/paises" 
     response = self.get(paises_path, @@options)
 
-    @@paises_json = Parser.parse_response_to_json(response)
-    Parser.parse_json_to_hash(@@paises_json, @@paises)
+    paises_json = Parser.parse_response_to_json(response)
+    Parser.parse_json_to_hash(paises_json, @@paises)
   end
 
   def self.get_zonas_in(pais_id)
@@ -299,38 +366,24 @@ module Bumeran
     Parser.parse_response_to_json(response)
   end
 
-  def self.plan_publicaciones 
-    if @@plan_publicaciones.empty?
-      paises.each do |pais|
-        pais["plan_publicaciones"] = get_plan_publicaciones_in(pais["id"])
-        pais["plan_publicaciones"].map{|plan_publicacion| @@plan_publicaciones << plan_publicacion}
-      end
-    end
-    @@plan_publicaciones
-  end
-
   def self.get_plan_publicaciones_in(pais_id)
     Bumeran.initialize
     plan_publicaciones_path = "/v0/empresas/planPublicaciones/#{pais_id}"
     response = self.get(plan_publicaciones_path, @@options)
 
-    return Parser.parse_response_to_json(response)
+    json = Parser.parse_response_to_json(response)
+    Parser.parse_json_to_hash(json, @@plan_publicaciones) # to save the zone in the zonas hash
+    return Parser.parse_json_to_hash(json, {}) 
   end
 
-  def self.denominaciones
-    @@denominaciones.empty? ? get_denominaciones : @@denominaciones
-  end
-
+  # Otros servicios
   def self.get_denominaciones
     Bumeran.initialize
     denominaciones_path = "/v0/empresas/denominaciones"
     response = self.get(denominaciones_path, @@options)
 
-    @@denominaciones = Parser.parse_response_to_json(response)
-  end
-
-  def self.direcciones
-    @@direcciones.empty? ? get_direcciones : @@direcciones
+    json = Parser.parse_response_to_json(response)
+    return Parser.parse_json_to_hash(json, @@denominaciones)
   end
 
   def self.get_direcciones
@@ -338,11 +391,8 @@ module Bumeran
     direcciones_path = "/v0/empresas/direcciones"
     response = self.get(direcciones_path, @@options)
 
-    @@direcciones = Parser.parse_response_to_json(response)
-  end
-
-  def self.frecuencias_pago
-    @@frecuencias_pago.empty? ? get_frecuencias_pago : @@frecuencias_pago
+    json = Parser.parse_response_to_json(response)
+    return Parser.parse_json_to_hash(json, @@direcciones)
   end
 
   def self.get_frecuencias_pago
@@ -350,11 +400,8 @@ module Bumeran
     frecuencias_pago_path = "/v0/empresas/comunes/frecuenciasPago"
     response = self.get(frecuencias_pago_path, @@options)
 
-    @@frecuencias_pago = Parser.parse_response_to_json(response)
-  end
-
-  def self.idiomas
-    @@idiomas.empty? ? get_idiomas : @@idiomas
+    json = Parser.parse_response_to_json(response)
+    return Parser.parse_json_to_hash(json, @@frecuencias_pago)
   end
 
   def self.get_idiomas
@@ -362,11 +409,8 @@ module Bumeran
     idiomas_path = "/v0/empresas/comunes/idiomas"
     response = self.get(idiomas_path, @@options)
 
-    @@idiomas = Parser.parse_response_to_json(response)
-  end
-
-  def self.industrias
-    @@industrias.empty? ? get_industrias : @@industrias
+    json = Parser.parse_response_to_json(response)
+    return Parser.parse_json_to_hash(json, @@idiomas)
   end
 
   def self.get_industrias
@@ -374,11 +418,8 @@ module Bumeran
     industrias_path = "/v0/empresas/comunes/industrias"
     response = self.get(industrias_path, @@options)
 
-    @@industrias = Parser.parse_response_to_json(response)
-  end
-
-  def self.niveles_idiomas
-    @@niveles_idiomas.empty? ? get_niveles_idiomas : @@niveles_idiomas
+    json = Parser.parse_response_to_json(response)
+    return Parser.parse_json_to_hash(json, @@industrias)
   end
 
   def self.get_niveles_idiomas
@@ -386,11 +427,8 @@ module Bumeran
     niveles_idiomas_path = "/v0/empresas/comunes/nivelesIdiomas"
     response = self.get(niveles_idiomas_path, @@options)
 
-    @niveles_idiomas = Parser.parse_response_to_json(response)
-  end
-
-  def self.tipos_trabajo
-    @@tipos_trabajo.empty? ? get_tipos_trabajo : @@tipos_trabajo
+    json = Parser.parse_response_to_json(response)
+    return Parser.parse_json_to_hash(json, @@niveles_idiomas)
   end
 
   def self.get_tipos_trabajo
@@ -398,11 +436,8 @@ module Bumeran
     tipos_trabajo_path = "/v0/empresas/comunes/tiposTrabajo"
     response = self.get(tipos_trabajo_path, @@options)
 
-    @@tipos_trabajo = Parser.parse_response_to_json(response)
-  end
-
-  def self.areas_estudio
-    @@areas_estudio.empty? ? get_areas_estudio : @@areas_estudio
+    json = Parser.parse_response_to_json(response)
+    return Parser.parse_json_to_hash(json, @@tipos_trabajo)
   end
 
   # Servicios de estudios de los postulantes
@@ -411,11 +446,8 @@ module Bumeran
     areas_estudio_path = "/v0/estudios/areasEstudio" 
     response = self.get(areas_estudio_path, @@options)
 
-    @@areas_estudio = Parser.parse_response_to_json(response)
-  end
-
-  def self.estados_estudio
-    @@estados_estudio.empty? ? get_estados_estudio : @@estados_estudio
+    json = Parser.parse_response_to_json(response)
+    return Parser.parse_json_to_hash(json, @@areas_estudio)
   end
 
   def self.get_estados_estudio
@@ -423,11 +455,8 @@ module Bumeran
     estados_estudio_path = "/v0/estudios/estadosEstudio" 
     response = self.get(estados_estudio_path, @@options)
 
-    @@estados_estudio = Parser.parse_response_to_json(response)
-  end
-
-  def self.tipos_estudio 
-    @@tipos_estudio.empty? ? get_tipos_estudio : @@tipos_estudio
+    json = Parser.parse_response_to_json(response)
+    return Parser.parse_json_to_hash(json, @@estados_estudio)
   end
 
   def self.get_tipos_estudio
@@ -435,7 +464,8 @@ module Bumeran
     tipos_estudio_path = "/v0/estudios/tiposEstudio" 
     response = self.get(tipos_estudio_path, @@options)
 
-    @@tipos_estudio = Parser.parse_response_to_json(response)
+    json = Parser.parse_response_to_json(response)
+    return Parser.parse_json_to_hash(json, @@tipos_estudio)
   end
 
   def self.get_estudio(estudio_id)
