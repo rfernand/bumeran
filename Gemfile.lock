@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    bumeran (0.2.0)
+    bumeran (0.2.1)
       httparty (>= 0.13.3)
       rails (>= 3.2)
 
