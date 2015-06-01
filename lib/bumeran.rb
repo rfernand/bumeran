@@ -206,7 +206,9 @@ module Bumeran
   end                                                                       #end                                               
 
   def self.generic_find_all_in(objects_sym, parent_object_sym, parent_service_sym, parent_object_id)  
-    if class_variable_get("@@#{objects_sym}").empty?                                                    # if @@zonas.empty?
+    if !class_variable_get("@@#{objects_sym}").empty? &&  send(parent_object_sym, parent_object_id)[objects_sym.to_s] # if !@@zonas.empty? && pais(pais_id)["zonas"]
+      send(parent_object_sym, parent_object_id)[objects_sym.to_s] # pais(pais_id)["zonas"]              #   pais(pais_id)["zonas"]
+    else                                                                                                # else
       parent_object = send(parent_service_sym)[parent_object_id]                                        #   pais = paises[pais_id]
 
       if parent_object[objects_sym.to_s]                                                                #   if pais["zonas"]
@@ -214,8 +216,6 @@ module Bumeran
       else                                                                                              #   else
         parent_object[objects_sym.to_s] = send("get_#{objects_sym}_in", parent_object_id)               #      pais["zonas"] = get_zonas_in(pais_id)
       end                                                                                               #   end
-    else                                                                                                # else
-      send(parent_object_sym, parent_object_id)[objects_sym.to_s] # pais(pais_id)["zonas"]              #   pais(pais_id)["zonas"]
     end                                                                                                 # end
   end
 
@@ -243,7 +243,7 @@ module Bumeran
   def self.subareas
     if @@subareas.empty?
       areas.each do |area_id, area|
-        area["subareas"] ? area["subarea"].merge!(get_subareas_in(area_id)) : area["subarea"] = get_subareas_in(area_id)
+        area["subareas"] ? area["subareas"].merge!(get_subareas_in(area_id)) : area["subareas"] = get_subareas_in(area_id)
       end
     end
     @@subareas
