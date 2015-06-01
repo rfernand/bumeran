@@ -155,10 +155,18 @@ module Bumeran
     return Parser.parse_response_to_json(response)
   end
 
-  def self.get_postulations_in_publication(publication_id)
+  def self.get_postulations_in_publication(publication_id, page=0, postulations_per_page=20)
     Bumeran.initialize
     get_postulations_in_publication_path = "/v0/empresas/avisos/#{publication_id}/postulaciones"
-    response = self.get(get_postulations_in_publication_path, @@options)
+    response = self.get(get_postulations_in_publication_path, @@options.merge(query: @@options[:query].merge({page: page, perPage: postulations_per_page})))
+
+    return Parser.parse_response_to_json(response)
+  end
+
+  def self.get_postulation(postulation_id)
+    Bumeran.initialize
+    get_postulation_path = "/v0/empresas/postulaciones/#{postulation_id}"
+    response = self.get(get_postulation_path, @@options)
 
     return Parser.parse_response_to_json(response)
   end
