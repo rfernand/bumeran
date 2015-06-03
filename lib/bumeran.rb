@@ -349,7 +349,7 @@ module Bumeran
   # Servicios generales asociados a datos de localización
   def self.get_paises
     Bumeran.initialize
-    paises_path = "/v0/empresas/locacion/paises" 
+    paises_path = "/v0/empresas/localizaciones/paises" 
     response = self.get(paises_path, @@options)
 
     paises_json = Parser.parse_response_to_json(response)
@@ -358,7 +358,7 @@ module Bumeran
 
   def self.get_zonas_in(pais_id)
     Bumeran.initialize
-    zonas_path = "/v0/empresas/locacion/paises/#{pais_id}/zonas" 
+    zonas_path = "/v0/empresas/localizaciones/paises/#{pais_id}/zonas" 
     response = self.get(zonas_path, @@options)
 
     json_zonas = Parser.parse_response_to_json(response)
@@ -368,7 +368,7 @@ module Bumeran
 
   def self.get_localidades_in(zona_id)
     Bumeran.initialize
-    localidades_path = "/v0/empresas/locacion/zonas/#{zona_id}/localidades" 
+    localidades_path = "/v0/empresas/localizaciones/zonas/#{zona_id}/localidades" 
     response = self.get(localidades_path, @@options)
 
     json = Parser.parse_response_to_json(response)
@@ -507,7 +507,7 @@ module Bumeran
   # Servicios de la experiencia laboral de los postulantes
   def self.get_experiencia_laboral(experiencia_laboral_id)
     Bumeran.initialize
-    experiencia_laboral_path = "/v0/experienciaLaborales/#{experiencia_laboral_id}" 
+    experiencia_laboral_path = "/v0/experienciasLaborales/#{experiencia_laboral_id}" 
     response = self.get(experiencia_laboral_path, @@options)
 
     return Parser.parse_response_to_json(response)

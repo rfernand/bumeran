@@ -54,6 +54,11 @@ describe Bumeran do
     Bumeran.frecuencias_pago.count.should > 0
   end
 
+  it 'can get paises' do
+    pp Bumeran.paises
+    Bumeran.paises.count.should > 0
+  end
+
   # localidades gives error! (API problem)
   it 'can get paises, zonas, localidades, and plan plublicaciones' do
     pp Bumeran.paises
