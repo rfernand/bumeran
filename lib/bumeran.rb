@@ -5,7 +5,7 @@ require 'erb'
 
 module Bumeran
   include HTTParty
-  base_uri 'https://developers.bumeran.com'
+  base_uri 'https://api.bumeran.com'
 
   # API login configuration, need initialization setup to work
   mattr_accessor :grant_type
@@ -59,6 +59,16 @@ module Bumeran
   # Default way to setup Bumeran.
   def self.setup
     yield self
+  end
+
+  def self.environment(use_environment="production")
+    if use_environment == "production"
+      Bumeran.base_uri('https://api.bumeran.com')
+    elsif use_environment == "development"
+      Bumeran.base_uri('https://developers.bumeran.com')
+    else
+      Bumeran.base_uri('https://developers.bumeran.com')
+    end
   end
 
   def self.initialize
@@ -130,6 +140,23 @@ module Bumeran
     end
   end
 
+  def self.update_publication(publication_id, json)
+    Bumeran.initialize
+    update_publication_path = "/v0/empresas/avisos/#{publication_id}"
+    response = self.post(update_publication_path, @@options.merge(body: json, headers: { "Accept" => "application/json", "Content-Type" => "application/json"}))
+
+    if Parser.parse_response(response)
+      case response.code
+        when 201
+          # "Publication updated, All good!"
+          return response # body contains id del proceso publicado
+        when 200
+          # "TODO: Uhm.. no idea, is this good?"
+          return response # body contains id del proceso publicado?
+      end
+    end
+  end
+
   def self.publish_publication(publication_id, pais_id, plan_publication_id)
     Bumeran.initialize
     publish_publication_path = "/v0/empresas/avisos/#{publication_id}/publicacion/#{plan_publication_id}"
@@ -145,6 +172,10 @@ module Bumeran
           return response # body contains id del proceso publicado?
       end
     end
+  end
+
+  def self.get_publication_url(publication_id)
+    "http://www.laborum.cl/empleos/#{publication_id}.html"
   end
 
   def self.get_publication(publication_id)

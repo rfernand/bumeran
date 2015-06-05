@@ -21,11 +21,12 @@ After you finished the gem installation, you need to configure it with your Bume
 
 ```ruby
 Bumeran.setup do |config|
-  config.grant_type = "password" # Default value
-  config.client_id  = ""         # Bumeran client id
-  config.username   = ""         # Bumeran client username
-  config.email      = ""         # Bumeran client email
-  config.password   = ""         # Bumeran client password
+  config.grant_type = "password"  # Default value
+  config.client_id  = ""          # Bumeran client id
+  config.username   = ""          # Bumeran client username
+  config.email      = ""          # Bumeran client email
+  config.password   = ""          # Bumeran client password
+  config.environment "production" # You can choose between production or development
 end
 ```
 ## How to use
