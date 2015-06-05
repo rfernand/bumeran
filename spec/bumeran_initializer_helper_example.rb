@@ -4,4 +4,5 @@ Bumeran.setup do |config|
   config.username   = ""
   config.email      = ""
   config.password   = ""
+  config.environment "development"
 end
