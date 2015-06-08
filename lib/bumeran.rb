@@ -37,6 +37,11 @@ module Bumeran
   mattr_accessor :options
   @@options = nil
 
+  mattr_accessor :last_request
+  mattr_accessor :last_response
+  @@last_request = nil
+  @@last_response = nil
+
   @@areas               = {}
   @@subareas            = {}
   @@paises              = {}
@@ -597,6 +602,8 @@ module Bumeran
     end
 
     def self.parse_response(response)
+      Bumeran.last_response = response
+      Bumeran.last_request = response.request
       case response.code
         when 200..201
           # "All good!"
@@ -614,6 +621,8 @@ module Bumeran
       end
     end
     def self.parse_response_to_json(response)
+      Bumeran.last_response = response
+      Bumeran.last_request = response.request
       case response.code
         when 200..201
           # "All good!"
