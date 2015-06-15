@@ -59,6 +59,7 @@ module Bumeran
   @@direcciones         = {}
   @@denominaciones      = {}
 
+  @@try_counter = 0
   
 
   # Default way to setup Bumeran.
@@ -83,10 +84,18 @@ module Bumeran
     end
   end
 
+  def self.invalidate_access_token!
+    @@access_token = nil
+  end
+
+  def self.revalidate_access_token
+    Bumeran.invalidate_access_token! 
+    Bumeran.initialize
+  end
 
   def self.has_valid_access_token?
-    if @@access_token_updated_at && @@expires_in
-      (Time.now < @@access_token_updated_at  + @@expires_in)
+    if @@access_token && @@access_token_updated_at && @@expires_in
+      (Time.now < @@access_token_updated_at  + @@expires_in.seconds + 10.seconds)
     else
       false
     end
@@ -609,6 +618,7 @@ module Bumeran
           # "All good!"
           return response.body
         when 401
+          self.invalidate_access_token!
           raise "Error 401: Unauthorized. Check login info.\n #{response.body}"
         when 403
           raise "Error 403: Forbidden"
@@ -628,6 +638,7 @@ module Bumeran
           # "All good!"
           return JSON.parse(response.body)
         when 401
+          self.invalidate_access_token!
           raise "Error 401: Unauthorized. Check login info.\n #{response.body}"
         when 403
           raise "Error 403: Forbidden"
