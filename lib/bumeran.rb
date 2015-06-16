@@ -37,6 +37,11 @@ module Bumeran
   mattr_accessor :options
   @@options = nil
 
+  mattr_accessor :last_request
+  mattr_accessor :last_response
+  @@last_request = nil
+  @@last_response = nil
+
   @@areas               = {}
   @@subareas            = {}
   @@paises              = {}
@@ -54,6 +59,7 @@ module Bumeran
   @@direcciones         = {}
   @@denominaciones      = {}
 
+  @@try_counter = 0
   
 
   # Default way to setup Bumeran.
@@ -78,10 +84,18 @@ module Bumeran
     end
   end
 
+  def self.invalidate_access_token!
+    @@access_token = nil
+  end
+
+  def self.revalidate_access_token
+    Bumeran.invalidate_access_token! 
+    Bumeran.initialize
+  end
 
   def self.has_valid_access_token?
-    if @@access_token_updated_at && @@expires_in
-      (Time.now < @@access_token_updated_at  + @@expires_in)
+    if @@access_token && @@access_token_updated_at && @@expires_in
+      (Time.now < @@access_token_updated_at  + @@expires_in.seconds + 10.seconds)
     else
       false
     end
@@ -597,11 +611,14 @@ module Bumeran
     end
 
     def self.parse_response(response)
+      Bumeran.last_response = response
+      Bumeran.last_request = response.request
       case response.code
         when 200..201
           # "All good!"
           return response.body
         when 401
+          Bumeran.invalidate_access_token!
           raise "Error 401: Unauthorized. Check login info.\n #{response.body}"
         when 403
           raise "Error 403: Forbidden"
@@ -614,11 +631,14 @@ module Bumeran
       end
     end
     def self.parse_response_to_json(response)
+      Bumeran.last_response = response
+      Bumeran.last_request = response.request
       case response.code
         when 200..201
           # "All good!"
           return JSON.parse(response.body)
         when 401
+          Bumeran.invalidate_access_token!
           raise "Error 401: Unauthorized. Check login info.\n #{response.body}"
         when 403
           raise "Error 403: Forbidden"
