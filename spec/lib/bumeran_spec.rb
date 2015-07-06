@@ -64,7 +64,7 @@ describe Bumeran do
     pp Bumeran.paises
     Bumeran.paises.count.should > 0
     Bumeran.zonas.count.should > 0
-    Bumeran.localidades.count.should > 0
+    #Bumeran.localidades.count.should > 0
     Bumeran.plan_publicaciones.count.should > 0
   end
 

@@ -86,6 +86,7 @@ module Bumeran
 
   def self.invalidate_access_token!
     @@access_token = nil
+    @@access_token_updated_at = nil
   end
 
   def self.revalidate_access_token
@@ -95,8 +96,9 @@ module Bumeran
 
   def self.has_valid_access_token?
     if @@access_token && @@access_token_updated_at && @@expires_in
-      (Time.now < @@access_token_updated_at  + @@expires_in.seconds + 10.seconds)
+      (Time.current < @@access_token_updated_at  + @@expires_in.seconds + 5.minutes)
     else
+      Bumeran.invalidate_access_token!
       false
     end
   end 
@@ -598,7 +600,7 @@ module Bumeran
       @@access_token = response["accessToken"]
       @@token_type   = response["tokenType"]
       @@expires_in   = response["expiresIn"]
-      @@access_token_updated_at = Time.now
+      @@access_token_updated_at = Time.current
       return @@access_token
     end
   end 
