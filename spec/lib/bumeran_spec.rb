@@ -124,26 +124,37 @@ describe Bumeran do
     Bumeran.tipos_estudio.count.should > 0
   end
 
-  it 'can get estudio', getters: true, focus: true do
-    estudio = Bumeran.get_estudio(1285190)
+  it 'can get estudio', getters: true do
+    params = {}
+    params['curriculum_id']=1000
+    estudio = Bumeran.get_estudio(1285190, params)
     pp estudio
     estudio["titulo"].class.should be String
   end
 
-  it 'can get conocimiento', getters: true, focus: true do
-    conocimiento = Bumeran.get_conocimiento(140)
+  it 'can get conocimiento', getters: true do
+    #conocimiento = Bumeran.get_conocimiento(140)
+    #pp conocimiento
+    #conocimiento["nombre"].class.should be String
+    params = {}
+    params['curriculum_id']=1000
+    conocimiento = Bumeran.get_conocimiento(140, params)
     pp conocimiento
     conocimiento["nombre"].class.should be String
   end
 
-  it 'can get conocimiento_custom', getters: true, focus: true do
-    conocimiento_custom = Bumeran.get_conocimiento_custom(623710)
+  it 'can get conocimiento_custom', getters: true do
+    params = {}
+    params['curriculum_id']=1000
+    conocimiento_custom = Bumeran.get_conocimiento_custom(623710, params)
     pp conocimiento_custom
     conocimiento_custom["nombre"].class.should be String
   end
 
-  it 'can get experiencia_laboral', getters: true, focus: true do
-    experiencia_laboral = Bumeran.get_experiencia_laboral(1651500)
+  it 'can get experiencia_laboral', getters: true do
+    params = {}
+    params['curriculum_id']=1000
+    experiencia_laboral = Bumeran.get_experiencia_laboral(1651500, params)
     pp experiencia_laboral
     experiencia_laboral["puesto"].class.should be String
   end
