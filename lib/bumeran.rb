@@ -525,26 +525,53 @@ module Bumeran
     return Parser.parse_json_to_hash(json, @@tipos_estudio)
   end
 
-  def self.get_estudio(estudio_id)
+  def self.get_estudio(estudio_id, params=nil)
     Bumeran.initialize
-    estudio_path = "/v0/estudios/#{estudio_id}" 
+    if params  && (params["postulacion_id"] || params["curriculum_id"])
+      if params["postulacion_id"]
+        estudio_path = "/v0/empresas/postulaciones/#{postulacion_id}/estudios/#{estudio_id}"
+      elsif params["curriculum_id"]
+        estudio_path = "/v0/empresas/curriculums/#{postulacion_id}/estudios/#{estudio_id}"
+      end
+    else
+      puts 'warning, deprecated at 01/09/2015, add postulacion_id to query ej: get_estudio(estudio_id, "postulacion_id" => postulacion_id)'
+      estudio_path = "/v0/estudios/#{estudio_id}" 
+    end
     response = self.get(estudio_path, @@options)
 
     return Parser.parse_response_to_json(response)
   end
 
-  def self.get_conocimiento(conocimiento_id)
+  def self.get_conocimiento(conocimiento_id, params=nil)
     Bumeran.initialize
-    conocimiento_path = "/v0/conocimientos/#{conocimiento_id}"
+    if params  && (params["postulacion_id"] || params["curriculum_id"])
+      if params["postulacion_id"]
+        conocimiento_path = "/v0/empresas/postulaciones/#{postulacion_id}/conocimientos/#{conocimiento_id}"
+      elsif params["curriculum_id"]
+        conocimiento_path = "/v0/empresas/curriculums/#{postulacion_id}/conocimientos/#{conocimiento_id}"
+      end
+    else
+      puts 'warning, deprecated at 01/09/2015, add postulacion_id to query ej: get_conocimiento(conocimiento_id, "postulacion_id" => postulacion_id)'
+      conocimiento_path = "/v0/conocimientos/#{conocimiento_id}"
+    end
     response = self.get(conocimiento_path, @@options)
 
     Parser.parse_response_to_json(response)
   end
 
 
-  def self.get_conocimiento_custom(conocimiento_id)
+  def self.get_conocimiento_custom(conocimiento_id, params=nil)
     Bumeran.initialize
-    conocimiento_custom_path = "/v0/conocimientos/custom/#{conocimiento_id}"
+    if params  && (params["postulacion_id"] || params["curriculum_id"])
+      if params["postulacion_id"]
+        conocimiento_path = "/v0/empresas/postulaciones/#{postulacion_id}/conocimientos/custom/#{conocimiento_id}"
+      elsif params["curriculum_id"]
+        conocimiento_path = "/v0/empresas/curriculums/#{postulacion_id}/conocimientos/custom/#{conocimiento_id}"
+      end
+    else
+      puts 'warning, deprecated at 01/09/2015, add postulacion_id to query ej: get_conocimiento(conocimiento_id, "postulacion_id" => postulacion_id)'
+      conocimiento_custom_path = "/v0/conocimientos/custom/#{conocimiento_id}"
+    end
     response = self.get(conocimiento_custom_path, @@options)
 
     Parser.parse_response_to_json(response)
@@ -552,9 +579,18 @@ module Bumeran
 
 
   # Servicios de la experiencia laboral de los postulantes
-  def self.get_experiencia_laboral(experiencia_laboral_id)
+  def self.get_experiencia_laboral(experiencia_laboral_id, params=nil)
     Bumeran.initialize
-    experiencia_laboral_path = "/v0/experienciasLaborales/#{experiencia_laboral_id}" 
+    if params  && (params["postulacion_id"] || params["curriculum_id"])
+      if params["postulacion_id"]
+        experiencia_laboral_path = "/v0/empresas/postulaciones/#{postulacion_id}/experienciasLaborales/#{experiencia_laboral_id}"
+      elsif params["curriculum_id"]
+        experiencia_laboral_path = "/v0/empresas/curriculums/#{postulacion_id}/experienciasLaborales/#{experiencia_laboral_id}"
+      end
+    else
+      puts 'warning, deprecated at 01/09/2015, add postulacion_id to query ej: get_experiencia_laboral(experiencia_laboral_id, "postulacion_id" => postulacion_id)'
+      experiencia_laboral_path = "/v0/experienciasLaborales/#{experiencia_laboral_id}" 
+    end
     response = self.get(experiencia_laboral_path, @@options)
 
     return Parser.parse_response_to_json(response)
