@@ -498,9 +498,9 @@ module Bumeran
   end
 
   # Servicios de estudios de los postulantes
-  def self.get_areas_estudio 
+  def self.get_areas_estudio
     Bumeran.initialize
-    areas_estudio_path = "/v0/estudios/areasEstudio" 
+    areas_estudio_path = "/v0/application/comunes/areasEstudio" 
     response = self.get(areas_estudio_path, @@options)
 
     json = Parser.parse_response_to_json(response)
@@ -509,7 +509,7 @@ module Bumeran
 
   def self.get_estados_estudio
     Bumeran.initialize
-    estados_estudio_path = "/v0/estudios/estadosEstudio" 
+    estados_estudio_path = "/v0/application/comunes/estadosEstudio" 
     response = self.get(estados_estudio_path, @@options)
 
     json = Parser.parse_response_to_json(response)
@@ -518,7 +518,7 @@ module Bumeran
 
   def self.get_tipos_estudio
     Bumeran.initialize
-    tipos_estudio_path = "/v0/estudios/tiposEstudio" 
+    tipos_estudio_path = "/v0/application/comunes/tiposEstudio"
     response = self.get(tipos_estudio_path, @@options)
 
     json = Parser.parse_response_to_json(response)
